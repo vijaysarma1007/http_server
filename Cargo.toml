@@ -1,0 +1,11 @@
+[package]
+name = "http_server"
+version = "0.1.0"
+edition = "2024"
+authors = ["Srirangam Vijay Mohan <svmsarma52@gmail.com>"]
+rust-version = "1.98.0"
+
+[dependencies]
+anyhow = "1.0.104"
+bytes = "1.12.1"
+thiserror = "2.0.21"
