@@ -2,8 +2,7 @@ use anyhow::{Context, Error, Ok, Result, bail};
 use bytes::Buf;
 use bytes::buf::Reader;
 use std::{
-    io::{BufRead, Read, Write},
-    net::{TcpListener, TcpStream},
+     fmt::Display, io::{BufRead, Read, Write}, net::{TcpListener, TcpStream},
 };
 
 // this buffer size could cause problem if it happens to be exactly what we end on
@@ -19,6 +18,23 @@ struct Request {
 #[derive(Debug)]
 enum Method {
     Get,
+}
+
+enum HttpCode {
+    Ok,
+    NotFound
+}
+
+
+impl Display for HttpCode {
+     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+         let (number, message) = match self {
+            Self::Ok => (200, "OK"),
+            Self::NotFound => (404, "Not Found")
+         };
+
+         write!(f, "{number} {message}")
+     }
 }
 
 impl TryFrom<Vec<u8>> for Method {
@@ -43,9 +59,9 @@ pub fn run() -> Result<()> {
         let raw_request = read_stream(&mut stream).context("Reading stream")?;
         let request = parse_raw_request(raw_request).context("Parsing raw request")?;
 
-        let mut response_code = if request.path == "/" { 200 } else { 404 };
+        let response_code = if request.path == "/" { HttpCode::Ok } else { HttpCode::NotFound };
 
-        let response = format!("HTTP/1.1 {response_code} OK\r\n\r\n");
+        let response = format!("HTTP/1.1 {response_code}\r\n\r\n");
         stream
             .write_all(response.as_bytes())
             .context("writing all response data")?;
