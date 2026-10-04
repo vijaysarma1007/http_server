@@ -1,6 +1,8 @@
-use anyhow::{Context, Error, Ok, Result, anyhow, bail};
+use anyhow::{Context, Error, Ok, Result, bail};
+use bytes::Buf;
+use bytes::buf::Reader;
 use std::{
-    io::{Read, Write},
+    io::{BufRead, Read, Write},
     net::{TcpListener, TcpStream},
 };
 
@@ -11,6 +13,7 @@ const SPACE: u8 = b' ';
 #[derive(Debug)]
 struct Request {
     method: Method,
+    path: String,
 }
 
 #[derive(Debug)]
@@ -24,17 +27,11 @@ impl TryFrom<Vec<u8>> for Method {
         let method_string =
             String::from_utf8(value).context("Converting bytes to method string")?;
 
-        Ok(match method_string.to_uppercase().as_str() {
+        Ok(match method_string.to_uppercase().trim() {
             "GET" => Self::Get,
             _ => bail!("Unknown Method"),
         })
     }
-}
-
-#[derive(Debug, Default)]
-enum RequestParseState {
-    #[default]
-    Method,
 }
 
 pub fn run() -> Result<()> {
@@ -45,9 +42,10 @@ pub fn run() -> Result<()> {
 
         let raw_request = read_stream(&mut stream).context("Reading stream")?;
         let request = parse_raw_request(raw_request).context("Parsing raw request")?;
-        dbg!(request);
 
-        let response = "HTTP/1.1 200 OK\r\n\r\n";
+        let mut response_code = if request.path == "/" { 200 } else { 404 };
+
+        let response = format!("HTTP/1.1 {response_code} OK\r\n\r\n");
         stream
             .write_all(response.as_bytes())
             .context("writing all response data")?;
@@ -80,27 +78,27 @@ fn read_stream(stream: &mut TcpStream) -> Result<Vec<u8>> {
 
 // parse the raw http request that we got from the client
 fn parse_raw_request(request: Vec<u8>) -> Result<Request> {
-    let state = RequestParseState::default();
-    let method;
-    match state {
-        RequestParseState::Method => {
-            method =
-                parse_method_from_request(&request).context("getting http method from request")?
-        }
-    };
-
-    Ok(Request { method })
+    let mut reader = request.as_slice().reader();
+    let method = parse_method_from_request(&mut reader).context("Parsing method")?;
+    let path = parse_path_from_request(&mut reader).context("parsing path from request")?;
+    Ok(Request { method, path })
 }
 
-fn parse_method_from_request(request: &[u8]) -> Result<Method> {
+fn parse_method_from_request(request: &mut Reader<&[u8]>) -> Result<Method> {
     let mut method = vec![];
-    for &next_byte in request {
-        if next_byte != SPACE {
-            method.push(next_byte);
-        } else {
-            break;
-        }
-    }
-
+    request
+        .read_until(SPACE, &mut method)
+        .context("Getting method bytes")?;
     Method::try_from(method)
+}
+
+fn parse_path_from_request(request: &mut Reader<&[u8]>) -> Result<String> {
+    let mut path_bytes = vec![];
+    request
+        .read_until(SPACE, &mut path_bytes)
+        .context("Parseing path from request")?;
+    Ok(String::from_utf8(path_bytes)
+        .context("converting path bytes to string")?
+        .trim()
+        .to_owned())
 }
