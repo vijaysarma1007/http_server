@@ -1,6 +1,7 @@
 use anyhow::{Context, Ok, Result};
 use std::{fmt::Display, io::Write, net::TcpStream};
 
+#[derive(Debug)]
 pub enum HttpCode {
     Ok,
     NotFound,
@@ -17,10 +18,29 @@ impl Display for HttpCode {
     }
 }
 
-pub fn send_response(stream: &mut TcpStream, response_code: HttpCode) -> Result<()> {
-    let response = format!("HTTP/1.1 {response_code}\r\n\r\n");
+#[derive(Debug)]
+pub struct Response {
+    pub code: HttpCode,
+    pub body: String,
+}
+
+impl Response {
+    pub fn build(&self) -> Result<String> {
+        let code = &self.code;
+        let body = &self.body;
+        let response = format!("HTTP/1.1 {code}\r\n\r\n{body}");
+        Ok(response)
+    }
+}
+
+pub fn send_response(stream: &mut TcpStream, response: Response) -> Result<()> {
     stream
-        .write_all(response.as_bytes())
+        .write_all(
+            response
+                .build()
+                .context("building response string")?
+                .as_bytes(),
+        )
         .context("writing all response data")?;
     stream
         .flush()

@@ -1,6 +1,7 @@
 mod method;
 mod request;
 mod response;
+mod routes;
 
 use anyhow::{Context, Ok, Result};
 use request::process_request;
@@ -14,15 +15,15 @@ pub fn run() -> Result<()> {
     dbg!("starting to listen");
     for stream in listener.incoming() {
         let mut stream = stream?;
-
         let request = process_request(&mut stream).context("processing stream into request")?;
-        let response_code = if request.path == "/" {
-            HttpCode::Ok
-        } else {
-            HttpCode::NotFound
-        };
+        let response = routes::router(request).context("Routing request")?;
+        // let response_code = if request.path == "/" {
+        //     HttpCode::Ok
+        // } else {
+        //     HttpCode::NotFound
+        // };
 
-        send_response(&mut stream, response_code).context("sending response")?;
+        send_response(&mut stream, response).context("sending response")?;
     }
 
     Ok(())
