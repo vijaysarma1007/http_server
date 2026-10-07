@@ -47,20 +47,25 @@ impl Response {
 }
 
 pub fn send_response(stream: &mut TcpStream, response: Response) -> Result<()> {
-    stream.write("HTTP/1.1 ".as_bytes()).context("writing protocol")?;
-    stream.write(format!("{}\r\n",response.code).as_bytes()).context("writing http code")?;
+    write!(stream, "HTTP/1.1 ").context("writing protocol")?;
+    write!(stream, "{}\r\n", response.code).context("Writing Http code")?;
 
     if response.body.is_some() {
-        stream.write(response.content_type_header().as_bytes()).context("writing content type header")?;
-        stream.write(response.content_length_header().unwrap().as_bytes()).context("writing content length header")?;
+        write!(
+            stream,
+            "{}{}",
+            response.content_type_header(),
+            response.content_length_header().unwrap()
+        )
+        .context("Writing content type header and content length header")?;
     }
 
-    stream.write("\r\n".as_bytes()).context("writing crlf for headers")?;
+    write!(stream, "\r\n").context("writing crlf for headers")?;
 
     if let Some(body) = &response.body {
-        stream.write(body.as_bytes()).context("writing body")?;
+        write!(stream, "{}", body).context("writing body")?;
     }
-   
+
     stream
         .flush()
         .context("flushing write so that everything goes out")?;
