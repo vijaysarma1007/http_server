@@ -5,7 +5,7 @@ mod routes;
 
 use anyhow::{Context, Ok, Result};
 use request::process_request;
-use response::{HttpCode, send_response};
+use response::send_response;
 use std::net::TcpListener;
 
 // this buffer size could cause problem if it happens to be exactly what we end on
