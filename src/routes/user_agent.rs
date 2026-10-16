@@ -7,6 +7,6 @@ pub fn user_agent(request: &Request) -> Result<Response> {
 
     Ok(Response {
         code: crate::response::HttpCode::Ok,
-        body: user_agent
+        body: user_agent,
     })
 }
