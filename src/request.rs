@@ -2,16 +2,22 @@ use crate::method::Method;
 use anyhow::{Context, Ok, Result};
 use bytes::Buf;
 use bytes::buf::Reader;
+use std::collections::HashMap;
 use std::io::{BufRead, Read};
 use std::net::TcpStream;
 
 const BUFFER_SIZE: usize = 1024;
 const SPACE: u8 = b' ';
 
+pub type Headers = HashMap<String, String>;
+
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct Request {
     pub method: Method,
     pub path: String,
+    pub protocol: String,
+    pub headers: Headers,
 }
 
 pub fn process_request(stream: &mut TcpStream) -> Result<Request> {
@@ -45,7 +51,17 @@ fn parse_raw_request(request: Vec<u8>) -> Result<Request> {
     let mut reader = request.as_slice().reader();
     let method = parse_method_from_request(&mut reader).context("Parsing method")?;
     let path = parse_path_from_request(&mut reader).context("parsing path from request")?;
-    Ok(Request { method, path })
+    let protocol =
+        parse_protocol_form_request(&mut reader).context("parsing protocol from request")?;
+    //skip_crlf(&mut reader).context("skipping \r\n")?;
+    let headers =
+        parse_headers_from_request(&mut reader).context("Parsing headers from request")?;
+    Ok(Request {
+        method,
+        path,
+        protocol,
+        headers,
+    })
 }
 
 fn parse_method_from_request(request: &mut Reader<&[u8]>) -> Result<Method> {
@@ -65,4 +81,41 @@ fn parse_path_from_request(request: &mut Reader<&[u8]>) -> Result<String> {
         .context("converting path bytes to string")?
         .trim()
         .to_owned())
+}
+
+fn parse_protocol_form_request(request: &mut Reader<&[u8]>) -> Result<String> {
+    let mut protocol = String::new();
+    request
+        .read_line(&mut protocol)
+        .context("reading protocol bytes")?;
+    Ok(protocol.trim().to_owned())
+}
+
+fn parse_headers_from_request(request: &mut Reader<&[u8]>) -> Result<Headers> {
+    let mut headers = HashMap::new();
+    loop {
+        let mut raw_header = String::new();
+        request
+            .read_line(&mut raw_header)
+            .context("reading header bytes")?;
+        let header = raw_header.trim();
+
+        if header.is_empty() {
+            break;
+        }
+
+        let mut header_parts = raw_header.splitn(2, ':');
+        let header_name = header_parts
+            .next()
+            .map(|header| header.trim().to_lowercase());
+        let header_value = header_parts.next().map(|header| header.trim().to_owned());
+
+        if header_name.is_none() || header_value.is_none() {
+            continue;
+        }
+
+        headers.insert(header_name.unwrap(), header_value.unwrap());
+    }
+    println!("headers: {:?}", headers);
+    Ok(headers)
 }

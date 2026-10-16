@@ -25,6 +25,7 @@ pub struct Response {
 }
 
 impl Response {
+    #[allow(dead_code)]
     pub fn build(&self) -> Result<String> {
         let code = &self.code;
         let body = self.body.clone().unwrap_or_default();

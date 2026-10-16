@@ -1,5 +1,6 @@
 pub mod echo;
 pub mod home;
+pub mod user_agent;
 
 use crate::{
     request::Request,
@@ -12,6 +13,9 @@ pub fn router(request: Request) -> Result<Response> {
     let response = match segments.next() {
         Some("") => home::home().context("processing home request")?,
         Some("echo") => echo::echo(segments.next()).context("processing path params")?,
+        Some("user-agent") => {
+            user_agent::user_agent(&request).context("Running user agent hander")?
+        }
         Some(_) => Response {
             code: HttpCode::NotFound,
             body: Some(String::new()),
@@ -20,6 +24,6 @@ pub fn router(request: Request) -> Result<Response> {
             bail!("Did not get any segments");
         }
     };
-
+    println!("response {:?}", response);
     Ok(response)
 }
