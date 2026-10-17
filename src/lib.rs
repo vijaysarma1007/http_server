@@ -20,8 +20,8 @@ pub fn run(port: u32, directory: Option<String>) -> Result<()> {
         thread::spawn(move || {
             let mut stream = stream.unwrap();
             let request = process_request(&mut stream).unwrap();
-            let response = routes::router(request, path.as_deref()).unwrap();
-            send_response(&mut stream, response).unwrap();
+            let response = routes::router(&request, path.as_deref()).unwrap();
+            send_response(&mut stream, response, &request).unwrap();
         });
     }
     Ok(())

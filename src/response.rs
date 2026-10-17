@@ -1,6 +1,8 @@
 use anyhow::{Context, Ok, Result};
 use std::{fmt::Display, io::Write, net::TcpStream};
 
+use crate::request::Request;
+
 #[derive(Debug)]
 pub enum HttpCode {
     Ok,
@@ -63,10 +65,13 @@ impl Response {
     }
 }
 
-pub fn send_response(stream: &mut TcpStream, response: Response) -> Result<()> {
+pub fn send_response(stream: &mut TcpStream, response: Response, request: &Request) -> Result<()> {
+    //writing protocol
     write!(stream, "HTTP/1.1 ").context("writing protocol")?;
+    //writing response code
     write!(stream, "{}\r\n", response.code).context("Writing Http code")?;
 
+    //writing header
     if response.body.is_some() {
         write!(
             stream,
@@ -77,12 +82,20 @@ pub fn send_response(stream: &mut TcpStream, response: Response) -> Result<()> {
         .context("Writing content type header and content length header")?;
     }
 
+    let accept_encoding = request.headers.get("accept-encoding");
+
+    if accept_encoding.is_some_and(|encoding| encoding.to_lowercase() == "gzip") {
+        write!(stream, "Content-Encoding: gzip\r\n").context("writing content encoding gzip header")?;
+    }
+
+    // writing crlf for headers
     write!(stream, "\r\n").context("writing crlf for headers")?;
 
+    // writing body
     if let Some(body) = &response.body {
         write!(stream, "{}", body).context("writing body")?;
     }
-
+    //flush the stream
     stream
         .flush()
         .context("flushing write so that everything goes out")?;

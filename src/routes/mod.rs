@@ -11,7 +11,7 @@ use crate::{
 };
 use anyhow::{Context, Ok, Result, bail};
 
-pub fn router(request: Request, directory: Option<&str>) -> Result<Response> {
+pub fn router(request: &Request, directory: Option<&str>) -> Result<Response> {
     let mut segments = request.path.trim_matches('/').split('/');
     let response = match segments.next() {
         Some("") => home::home().context("processing home request")?,
