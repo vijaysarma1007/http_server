@@ -3,6 +3,7 @@ use anyhow::{Context, Error, bail};
 #[derive(Debug)]
 pub enum Method {
     Get,
+    Post,
 }
 
 impl TryFrom<Vec<u8>> for Method {
@@ -13,6 +14,7 @@ impl TryFrom<Vec<u8>> for Method {
 
         Ok(match method_string.to_uppercase().trim() {
             "GET" => Self::Get,
+            "POST" => Self::Post,
             _ => bail!("Unknown Method"),
         })
     }

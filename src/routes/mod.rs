@@ -1,9 +1,11 @@
 pub mod echo;
 pub mod handle_file;
 pub mod home;
+pub mod save_file;
 pub mod user_agent;
 
 use crate::{
+    method::Method,
     request::Request,
     response::{HttpCode, Response},
 };
@@ -17,9 +19,12 @@ pub fn router(request: Request, directory: Option<&str>) -> Result<Response> {
         Some("user-agent") => {
             user_agent::user_agent(&request).context("Running user agent hander")?
         }
-        Some("files") => {
-            handle_file::handle_file(segments.next(), directory).context("handling file route")?
-        }
+        Some("files") => match request.method {
+            Method::Get => handle_file::handle_file(segments.next(), directory)
+                .context("handling file route")?,
+            Method::Post => save_file::save_file(directory, segments.next(), &request)
+                .context("saving file handler")?,
+        },
         Some(_) => Response {
             code: HttpCode::NotFound,
             body: Some(String::new()),

@@ -1,5 +1,5 @@
 use crate::method::Method;
-use anyhow::{Context, Ok, Result};
+use anyhow::{Context, Ok, Result, bail};
 use bytes::Buf;
 use bytes::buf::Reader;
 use std::collections::HashMap;
@@ -18,6 +18,7 @@ pub struct Request {
     pub path: String,
     pub protocol: String,
     pub headers: Headers,
+    pub body: Option<String>,
 }
 
 pub fn process_request(stream: &mut TcpStream) -> Result<Request> {
@@ -56,11 +57,20 @@ fn parse_raw_request(request: Vec<u8>) -> Result<Request> {
     //skip_crlf(&mut reader).context("skipping \r\n")?;
     let headers =
         parse_headers_from_request(&mut reader).context("Parsing headers from request")?;
+    println!("about to parse body");
+    let body = if matches!(method, Method::Post) {
+        Some(parse_body_from_request(&mut reader, &headers).context("parsing body from request")?)
+    } else {
+        None
+    };
+    println!("body: {body:?}");
+
     Ok(Request {
         method,
         path,
         protocol,
         headers,
+        body,
     })
 }
 
@@ -118,4 +128,19 @@ fn parse_headers_from_request(request: &mut Reader<&[u8]>) -> Result<Headers> {
     }
     println!("headers: {:?}", headers);
     Ok(headers)
+}
+
+fn parse_body_from_request(request: &mut Reader<&[u8]>, headers: &Headers) -> Result<String> {
+    let Some(content_length) = headers.get("content-length") else {
+        bail!("missing content length header");
+    };
+
+    let length = content_length
+        .parse::<usize>()
+        .context("parsing content length header into number")?;
+    let mut buffer = vec![0_u8; length];
+
+    request.read(&mut buffer).context("reading into buffer")?;
+
+    String::from_utf8(buffer).context("converting body bufer to string")
 }

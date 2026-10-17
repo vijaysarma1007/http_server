@@ -1,17 +1,12 @@
 use anyhow::{Context, Ok, Result};
-use std::{
-    fmt::{Display, format},
-    io::Write,
-    net::TcpStream,
-    thread::sleep,
-    time::Duration,
-};
+use std::{fmt::Display, io::Write, net::TcpStream};
 
 #[derive(Debug)]
 pub enum HttpCode {
     Ok,
     NotFound,
     YourFault,
+    Created
 }
 
 impl Display for HttpCode {
@@ -20,6 +15,7 @@ impl Display for HttpCode {
             Self::Ok => (200, "OK"),
             Self::NotFound => (404, "Not Found"),
             Self::YourFault => (400, "Bad Request"),
+            Self::Created => (201, "Created")
         };
 
         write!(f, "{number} {message}")
