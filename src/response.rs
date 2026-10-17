@@ -8,7 +8,7 @@ pub enum HttpCode {
     Ok,
     NotFound,
     YourFault,
-    Created
+    Created,
 }
 
 impl Display for HttpCode {
@@ -17,7 +17,7 @@ impl Display for HttpCode {
             Self::Ok => (200, "OK"),
             Self::NotFound => (404, "Not Found"),
             Self::YourFault => (400, "Bad Request"),
-            Self::Created => (201, "Created")
+            Self::Created => (201, "Created"),
         };
 
         write!(f, "{number} {message}")
@@ -84,8 +84,11 @@ pub fn send_response(stream: &mut TcpStream, response: Response, request: &Reque
 
     let accept_encoding = request.headers.get("accept-encoding");
 
-    if accept_encoding.is_some_and(|encoding| encoding.to_lowercase() == "gzip") {
-        write!(stream, "Content-Encoding: gzip\r\n").context("writing content encoding gzip header")?;
+    let gzip_encoding = is_gzip_encoding_requested(accept_encoding);
+
+    if gzip_encoding {
+        write!(stream, "Content-Encoding: gzip\r\n")
+            .context("writing content encoding gzip header")?;
     }
 
     // writing crlf for headers
@@ -100,4 +103,19 @@ pub fn send_response(stream: &mut TcpStream, response: Response, request: &Reque
         .flush()
         .context("flushing write so that everything goes out")?;
     Ok(())
+}
+
+fn is_gzip_encoding_requested(encodings: Option<&String>) -> bool {
+    encodings
+        .map(|encoding| {
+            let requested_encodings = encoding
+                .split(",")
+                .map(|encoding| encoding.trim().to_lowercase())
+                .collect::<Vec<String>>();
+
+            requested_encodings
+                .iter()
+                .any(|encoding| encoding == "gzip")
+        })
+        .unwrap_or_default()
 }
