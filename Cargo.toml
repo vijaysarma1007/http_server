@@ -8,4 +8,5 @@ rust-version = "1.98.0"
 [dependencies]
 anyhow = "1.0.104"
 bytes = "1.12.1"
+flate2 = "1.1.10"
 thiserror = "2.0.21"

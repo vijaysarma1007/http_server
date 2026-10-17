@@ -14,6 +14,8 @@ pub fn save_file(
             code: crate::response::HttpCode::YourFault,
             body: None,
             content_type: crate::response::ContentType::TextPlain,
+            gzip_encoding: false,
+            encoded_body: None,
         });
     };
 
@@ -22,6 +24,8 @@ pub fn save_file(
             code: crate::response::HttpCode::YourFault,
             body: None,
             content_type: crate::response::ContentType::TextPlain,
+            gzip_encoding: false,
+            encoded_body: None,
         });
     };
 
@@ -32,6 +36,8 @@ pub fn save_file(
             code: crate::response::HttpCode::YourFault,
             body: None,
             content_type: crate::response::ContentType::TextPlain,
+            gzip_encoding: false,
+            encoded_body: None,
         });
     };
     let mut body_buffer = body.as_bytes();
@@ -43,5 +49,7 @@ pub fn save_file(
         code: crate::response::HttpCode::Created,
         body: None,
         content_type: crate::response::ContentType::TextPlain,
+        gzip_encoding: false,
+        encoded_body: None,
     })
 }

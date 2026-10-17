@@ -29,6 +29,8 @@ pub fn router(request: &Request, directory: Option<&str>) -> Result<Response> {
             code: HttpCode::NotFound,
             body: Some(String::new()),
             content_type: crate::response::ContentType::TextPlain,
+            gzip_encoding: false,
+            encoded_body: None,
         },
         None => {
             bail!("Did not get any segments");

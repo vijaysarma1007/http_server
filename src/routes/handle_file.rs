@@ -13,6 +13,8 @@ pub fn handle_file(file_name: Option<&str>, directory: Option<&str>) -> Result<R
             code: crate::response::HttpCode::YourFault,
             body: None,
             content_type: crate::response::ContentType::TextPlain,
+            gzip_encoding: false,
+            encoded_body: None,
         });
     };
 
@@ -21,6 +23,8 @@ pub fn handle_file(file_name: Option<&str>, directory: Option<&str>) -> Result<R
             code: crate::response::HttpCode::NotFound,
             body: None,
             content_type: crate::response::ContentType::TextPlain,
+            gzip_encoding: false,
+            encoded_body: None,
         });
     };
 
@@ -35,6 +39,8 @@ pub fn handle_file(file_name: Option<&str>, directory: Option<&str>) -> Result<R
                     code: crate::response::HttpCode::NotFound,
                     body: None,
                     content_type: crate::response::ContentType::TextPlain,
+                    gzip_encoding: false,
+                    encoded_body: None,
                 });
             } else {
                 return Err(error.into());
@@ -51,5 +57,7 @@ pub fn handle_file(file_name: Option<&str>, directory: Option<&str>) -> Result<R
         code: crate::response::HttpCode::Ok,
         body: Some(contents),
         content_type: crate::response::ContentType::ApplicationOctetStream,
+        gzip_encoding: false,
+        encoded_body: None,
     })
 }
