@@ -9,6 +9,7 @@ pub fn echo(path_param: Option<&str>) -> Result<Response> {
     let response = Response {
         code: crate::response::HttpCode::Ok,
         body: Some(param.to_owned()),
+        content_type: crate::response::ContentType::TextPlain,
     };
 
     Ok(response)

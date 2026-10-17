@@ -8,5 +8,6 @@ pub fn user_agent(request: &Request) -> Result<Response> {
     Ok(Response {
         code: crate::response::HttpCode::Ok,
         body: user_agent,
+        content_type: crate::response::ContentType::TextPlain,
     })
 }

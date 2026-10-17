@@ -1,10 +1,17 @@
 use anyhow::{Context, Ok, Result};
-use std::{fmt::Display, io::Write, net::TcpStream, thread::sleep, time::Duration};
+use std::{
+    fmt::{Display, format},
+    io::Write,
+    net::TcpStream,
+    thread::sleep,
+    time::Duration,
+};
 
 #[derive(Debug)]
 pub enum HttpCode {
     Ok,
     NotFound,
+    YourFault,
 }
 
 impl Display for HttpCode {
@@ -12,6 +19,7 @@ impl Display for HttpCode {
         let (number, message) = match self {
             Self::Ok => (200, "OK"),
             Self::NotFound => (404, "Not Found"),
+            Self::YourFault => (400, "Bad Request"),
         };
 
         write!(f, "{number} {message}")
@@ -19,9 +27,16 @@ impl Display for HttpCode {
 }
 
 #[derive(Debug)]
+pub enum ContentType {
+    TextPlain,
+    ApplicationOctetStream,
+}
+
+#[derive(Debug)]
 pub struct Response {
     pub code: HttpCode,
     pub body: Option<String>,
+    pub content_type: ContentType,
 }
 
 impl Response {
@@ -34,7 +49,12 @@ impl Response {
     }
 
     fn content_type_header(&self) -> String {
-        "Content-Type: text/plain\r\n".to_owned()
+        let raw_header = match self.content_type {
+            ContentType::TextPlain => "text/plain",
+            ContentType::ApplicationOctetStream => "application/octet-stream",
+        };
+
+        format!("Content-Type: {raw_header}\r\n")
     }
 
     fn content_length_header(&self) -> Option<String> {

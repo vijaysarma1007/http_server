@@ -6,5 +6,6 @@ pub fn home() -> Result<Response> {
     Ok(Response {
         code: crate::response::HttpCode::Ok,
         body: Some("".to_owned()),
+        content_type: crate::response::ContentType::TextPlain,
     })
 }
